@@ -1,0 +1,29 @@
+# ---- .NET ----
+bin/
+obj/
+*.user
+*.suo
+.vs/
+artifacts/
+[Tt]est[Rr]esults/
+*.coverage
+*.trx
+
+# ---- Node / Angular ----
+node_modules/
+frontend/dist/
+frontend/.angular/
+npm-debug.log*
+pnpm-debug.log*
+
+# ---- Env & secrets ----
+*.env
+.env
+.env.*
+appsettings.*.local.json
+secrets.json
+
+# ---- OS / IDE ----
+.DS_Store
+Thumbs.db
+*.log
