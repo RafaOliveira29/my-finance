@@ -15,8 +15,10 @@ public sealed class MyFinanceDbContextFactory : IDesignTimeDbContextFactory<MyFi
             Environment.GetEnvironmentVariable("MYFINANCE_DB")
             ?? "Host=localhost;Port=5433;Database=myfinance;Username=myfinance;Password=myfinance_dev";
 
+        // Mesmas convenções do runtime (snake_case) para a migration bater com o schema real.
         var options = new DbContextOptionsBuilder<MyFinanceDbContext>()
             .UseNpgsql(connectionString)
+            .UseSnakeCaseNamingConvention()
             .Options;
 
         return new MyFinanceDbContext(options);

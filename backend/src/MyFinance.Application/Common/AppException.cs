@@ -31,3 +31,10 @@ public sealed class ConflictException(string message) : AppException(message)
     public override string Title => "Conflito de estado";
     public override int StatusCode => 409;
 }
+
+/// <summary>Credenciais inválidas / não autenticado → 401.</summary>
+public sealed class UnauthorizedException(string message) : AppException(message)
+{
+    public override string Title => "Não autorizado";
+    public override int StatusCode => 401;
+}

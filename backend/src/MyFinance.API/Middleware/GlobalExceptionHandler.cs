@@ -6,8 +6,9 @@ namespace MyFinance.API.Middleware;
 
 /// <summary>
 /// Converte qualquer exceção em <c>ProblemDetails</c> padronizado (CA071 / HT05):
-/// <see cref="AppException"/> vira 400/404/409 com título de negócio; o resto vira 500 logado,
-/// sem vazar detalhes internos.
+/// falha de validação (FluentValidation) vira 400 com o dicionário de erros;
+/// <see cref="AppException"/> vira 400/401/404/409 com título de negócio;
+/// o resto vira 500 logado, sem vazar detalhes internos.
 /// </summary>
 public sealed class GlobalExceptionHandler(
     IProblemDetailsService problemDetailsService,
@@ -18,28 +19,51 @@ public sealed class GlobalExceptionHandler(
         Exception exception,
         CancellationToken cancellationToken)
     {
-        var (status, title) = exception switch
+        int status;
+        string title;
+        IDictionary<string, string[]>? errors = null;
+
+        switch (exception)
         {
-            AppException app => (app.StatusCode, app.Title),
-            _ => (StatusCodes.Status500InternalServerError, "Erro interno")
-        };
+            case FluentValidation.ValidationException validation:
+                status = StatusCodes.Status400BadRequest;
+                title = "Requisição inválida";
+                errors = validation.Errors
+                    .GroupBy(e => e.PropertyName)
+                    .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());
+                break;
+
+            case AppException app:
+                status = app.StatusCode;
+                title = app.Title;
+                break;
+
+            default:
+                status = StatusCodes.Status500InternalServerError;
+                title = "Erro interno";
+                break;
+        }
 
         if (status == StatusCodes.Status500InternalServerError)
             logger.LogError(exception, "Erro não tratado ao processar {Path}", httpContext.Request.Path);
 
         httpContext.Response.StatusCode = status;
 
+        var problem = new ProblemDetails
+        {
+            Status = status,
+            Title = title,
+            Detail = status == StatusCodes.Status500InternalServerError ? null : exception.Message,
+            Type = $"https://httpstatuses.io/{status}",
+        };
+        if (errors is not null)
+            problem.Extensions["errors"] = errors;
+
         return await problemDetailsService.TryWriteAsync(new ProblemDetailsContext
         {
             HttpContext = httpContext,
             Exception = exception,
-            ProblemDetails = new ProblemDetails
-            {
-                Status = status,
-                Title = title,
-                Detail = status == StatusCodes.Status500InternalServerError ? null : exception.Message,
-                Type = $"https://httpstatuses.io/{status}"
-            }
+            ProblemDetails = problem,
         });
     }
 }
