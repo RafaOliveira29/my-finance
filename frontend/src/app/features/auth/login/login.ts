@@ -21,7 +21,9 @@ import { AuthService } from '../../../core/auth/auth.service';
         @if (error()) {
           <p class="auth-error">{{ error() }}</p>
         }
-        <button type="submit" [disabled]="loading()">{{ loading() ? 'Entrando…' : 'Entrar' }}</button>
+        <button type="submit" [disabled]="loading()">
+          {{ loading() ? 'Entrando…' : 'Entrar' }}
+        </button>
       </form>
       <p class="auth-alt">Não tem conta? <a routerLink="/register">Criar conta</a></p>
     </section>
