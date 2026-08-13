@@ -49,7 +49,7 @@ docker compose up -d db
 cd backend
 dotnet ef database update --project src/MyFinance.Infrastructure --startup-project src/MyFinance.API
 ```
-Isso cria/atualiza as tabelas no banco (hoje: `users`).
+Isso cria/atualiza as tabelas no banco (hoje: `users`, `categories`, `income_sources`, `expense_sources`).
 
 ---
 
@@ -95,8 +95,53 @@ $me = Invoke-RestMethod "$b/me" -Headers @{ Authorization = "Bearer $($r.accessT
 $me   # deve mostrar id, name, email
 ```
 
-### ⬜ Fases 2 a 7
-*Cada fase concluída adiciona aqui seu Mapa de teste (ex.: Fase 2 — criar categoria/receita/despesa e ver na lista).* — **pendente.**
+### ✅ Fase 2 — Cadastros base (categorias, receitas, despesas fixas)
+*Objetivo: cadastrar de onde vem e para onde vai o dinheiro — e provar que **um usuário nunca vê o dado do outro**.*
+
+**A) Testes automatizados (rápido; NÃO precisa de banco nem servidores):**
+```powershell
+cd backend
+dotnet test MyFinance.slnx      # esperado: 30 testes verdes (17 domínio + 13 aplicação)
+cd ../frontend
+npm test                        # esperado: 14 testes verdes
+```
+
+**B) Teste manual pela interface (o fluxo real do usuário):**
+Pré: banco + backend + frontend ligados (seção 2), e uma conta criada (Fase 2 exige estar logado).
+1. Entre no app → a tela inicial agora tem **menu** (Início, Categorias, Receitas, Despesas fixas).
+2. **Categorias → "Nova categoria"**: nome `Moradia`, tipo **Despesa**, escolha uma cor → **Salvar**. Ela aparece na lista. ✔️ criar.
+3. Crie também `Salário` do tipo **Receita** (você vai precisar dela no passo 4).
+4. **Receitas → "Nova receita"**: descrição `Salário CLT`, valor `7500,55`, dia da competência `5` → **Salvar**. Na lista o valor aparece como **R$ 7.500,55**. ✔️ dinheiro correto.
+5. **Despesas fixas → "Nova despesa fixa"**: descrição `Aluguel`, valor `2200`, dia do vencimento `10`, mês do vencimento **"No mês seguinte"** → **Salvar**. Na lista aparece *"dia 10 do mês seguinte"*.
+6. **Editar**: em Categorias, clique **Editar** numa categoria, mude o nome e salve → a lista reflete a mudança. ✔️ editar.
+7. **Regra da categoria em uso:** tente **Excluir** a categoria `Salário` (usada pela receita) → aparece o aviso *"Esta categoria está em uso e não pode ser excluída. Inative-a…"* e ela **continua na lista**. ✔️ RN11/CA065.
+8. **Inativar em vez de excluir:** edite essa categoria, desmarque **"Categoria ativa"**, salve → a lista mostra o selo **Inativa**.
+9. **Excluir de verdade:** exclua uma categoria que não está em uso → ela some da lista. ✔️ excluir.
+10. **Isolamento (o mais importante):** clique **Sair**, crie uma **segunda conta** e vá em Categorias/Receitas/Despesas → **todas as listas estão vazias**. Você não vê nada da primeira conta. ✔️ multi-tenant (RN13/CA076).
+
+**C) Responsividade (obrigatório — nada pode quebrar):**
+Abra o app, pressione **F12** → ícone de dispositivo, e percorra **320px → 1440px**:
+- Abaixo de 900px: some a barra lateral, aparece o botão **☰**, e cada linha das listas vira um **cartão** (sem rolagem lateral).
+- A partir de 900px: barra lateral fixa à esquerda e listas em tabela.
+- Em nenhuma largura a página deve rolar para os lados.
+
+**D) Teste no nível da API (opcional):**
+Abra `backend/src/MyFinance.API/MyFinance.API.http` e envie os blocos da seção **Fase 2**, de cima para baixo.
+- **Esperado:** criar → **201**; listar/obter → **200**; atualizar → **200**; excluir → **204**; categoria em uso → **409**; dados inválidos ou categoria inexistente → **400**; sem token → **401**; acessar pelo id um registro de **outro usuário** → **404**.
+
+> **Dicas que evitam falso negativo neste projeto** (aprendidas na marra):
+> - Antes de subir a API, **mate instâncias antigas** e libere a porta — senão você testa um build velho:
+>   ```powershell
+>   Get-Process -Name 'MyFinance.API' -ErrorAction SilentlyContinue | Stop-Process -Force
+>   ```
+> - Para testar isolamento **do zero**, limpe as tabelas (apaga TODOS os dados locais):
+>   ```powershell
+>   docker exec myfinance-db psql -U myfinance -d myfinance -c "TRUNCATE income_sources, expense_sources, categories, users CASCADE;"
+>   ```
+> - Ao contar itens de uma lista no PowerShell, use `@(...)` e compare **ids**, não só quantidades — foi confundindo "quantos vieram" com "de quem são" que um vazamento inexistente pareceu real.
+
+### ⬜ Fases 3 a 7
+*Cada fase concluída adiciona aqui seu Mapa de teste.* — **pendente.**
 
 ---
 

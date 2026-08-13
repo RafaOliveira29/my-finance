@@ -50,3 +50,141 @@ Content-Type: application/json
   "email": "nao-e-email",
   "password": "123"
 }
+
+###############################################################################
+# Fase 2 — Cadastros base (envie de cima para baixo; usam o token do login)
+###############################################################################
+
+### Categoria de despesa — cria
+# @name novaCategoriaDespesa
+POST {{host}}/api/categories
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "name": "Moradia",
+  "type": "Expense",
+  "color": "#3366ff",
+  "icon": "home"
+}
+
+### Categoria de receita — cria
+# @name novaCategoriaReceita
+POST {{host}}/api/categories
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "name": "Salário",
+  "type": "Income",
+  "color": "#16a34a",
+  "icon": null
+}
+
+### Categorias — lista (só as suas)
+GET {{host}}/api/categories
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Categoria — obtém por id
+GET {{host}}/api/categories/{{novaCategoriaDespesa.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Categoria — atualiza (renomeia e mantém ativa)
+PUT {{host}}/api/categories/{{novaCategoriaDespesa.response.body.$.id}}
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "name": "Moradia e contas",
+  "type": "Expense",
+  "color": "#3366ff",
+  "icon": "home",
+  "isActive": true
+}
+
+### Fonte de receita — cria
+# @name novaReceita
+POST {{host}}/api/income-sources
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "categoryId": "{{novaCategoriaReceita.response.body.$.id}}",
+  "description": "Salário CLT",
+  "defaultAmount": 7500.55,
+  "competenceDay": 5,
+  "recurrenceType": "Monthly",
+  "startDate": "2026-01-01",
+  "endDate": null,
+  "notes": "líquido"
+}
+
+### Fontes de receita — lista
+GET {{host}}/api/income-sources
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### Despesa fixa — cria (vence no mês seguinte à competência)
+# @name novaDespesa
+POST {{host}}/api/expense-sources
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "categoryId": "{{novaCategoriaDespesa.response.body.$.id}}",
+  "description": "Aluguel",
+  "expenseKind": "Fixed",
+  "defaultAmount": 2200.00,
+  "dueDay": 10,
+  "dueMonthOffset": 1,
+  "recurrenceType": "Monthly",
+  "startDate": "2026-01-01",
+  "endDate": null,
+  "notes": null
+}
+
+### Despesas fixas — lista
+GET {{host}}/api/expense-sources
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### (erro esperado: 409) excluir categoria EM USO pela receita
+DELETE {{host}}/api/categories/{{novaCategoriaReceita.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+### (erro esperado: 400) categoria inexistente ao criar receita
+POST {{host}}/api/income-sources
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "categoryId": "00000000-0000-0000-0000-000000000001",
+  "description": "Sem categoria",
+  "defaultAmount": 100,
+  "competenceDay": 1,
+  "recurrenceType": "Monthly",
+  "startDate": "2026-01-01",
+  "endDate": null,
+  "notes": null
+}
+
+### (erro esperado: 400) validação — nome vazio e tipo inválido
+POST {{host}}/api/categories
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+{
+  "name": "",
+  "type": "Coisa",
+  "color": null,
+  "icon": null
+}
+
+### (erro esperado: 401) listar categorias sem token
+GET {{host}}/api/categories
+
+### Excluir a despesa e depois a categoria livre (esperado: 204 em ambos)
+DELETE {{host}}/api/expense-sources/{{novaDespesa.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.accessToken}}
+
+###
+DELETE {{host}}/api/categories/{{novaCategoriaDespesa.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.accessToken}}

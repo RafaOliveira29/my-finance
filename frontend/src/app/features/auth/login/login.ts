@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
+import { apiErrorMessage } from '../../../core/http/api-error';
 
 @Component({
   selector: 'app-login',
@@ -52,7 +53,7 @@ export class Login {
     this.auth.login(this.form.getRawValue()).subscribe({
       next: () => this.router.navigateByUrl('/'),
       error: (err) => {
-        this.error.set(err?.error?.detail ?? err?.error?.title ?? 'E-mail ou senha inválidos.');
+        this.error.set(apiErrorMessage(err, 'E-mail ou senha inválidos.'));
         this.loading.set(false);
       },
     });

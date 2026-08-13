@@ -25,6 +25,7 @@ public static class DependencyInjection
         // Unidade de trabalho = o próprio DbContext (mesma instância scoped do request).
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<MyFinanceDbContext>());
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
 
         services.AddSingleton<IPasswordHasher, Argon2PasswordHasher>();
 
