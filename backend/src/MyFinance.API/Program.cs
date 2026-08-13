@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using MyFinance.API.Auth;
 using MyFinance.API.Middleware;
+using MyFinance.API.OpenApi;
+using Scalar.AspNetCore;
 using MyFinance.Application;
 using MyFinance.Application.Abstractions;
 using MyFinance.Infrastructure;
@@ -13,7 +15,7 @@ builder.Services
     .AddControllers()
     .AddJsonOptions(options =>
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options => options.AddDocumentTransformer<BearerSecurityTransformer>());
 
 // Erro padronizado → ProblemDetails (CA071 / HT05): nenhum 500 cru, nenhum erro silencioso.
 builder.Services.AddProblemDetails();
@@ -62,6 +64,7 @@ app.UseExceptionHandler();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi(); // /openapi/v1.json → base para gerar os tipos TS do front (CA073).
+    app.MapScalarApiReference(); // /scalar → interface para explorar e testar a API à mão.
 }
 
 app.UseHttpsRedirection();

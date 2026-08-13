@@ -63,6 +63,7 @@ Isso cria/atualiza as tabelas no banco (hoje: `users`, `categories`, `income_sou
 4. `dotnet run --project src/MyFinance.API` e abrir no navegador:
    - http://localhost:5080/health → **esperado:** `{"status":"ok"}`
    - http://localhost:5080/openapi/v1.json → **esperado:** documento OpenAPI (JSON).
+   - http://localhost:5080/scalar → **esperado:** a interface visual da API (só em Development).
 
 ### ✅ Fase 1 — Auth & tenant (cadastro, login, área protegida)
 *Objetivo: criar conta, entrar, acessar área logada e ver os erros corretos.*
@@ -125,9 +126,16 @@ Abra o app, pressione **F12** → ícone de dispositivo, e percorra **320px → 
 - A partir de 900px: barra lateral fixa à esquerda e listas em tabela.
 - Em nenhuma largura a página deve rolar para os lados.
 
-**D) Teste no nível da API (opcional):**
-Abra `backend/src/MyFinance.API/MyFinance.API.http` e envie os blocos da seção **Fase 2**, de cima para baixo.
-- **Esperado:** criar → **201**; listar/obter → **200**; atualizar → **200**; excluir → **204**; categoria em uso → **409**; dados inválidos ou categoria inexistente → **400**; sem token → **401**; acessar pelo id um registro de **outro usuário** → **404**.
+**D) Teste no nível da API — duas formas:**
+
+*Pela interface visual (mais fácil):* abra **http://localhost:5080/scalar** com o backend rodando.
+1. Vá em **Auth → POST /api/auth/register**, preencha nome/e-mail/senha e envie. Copie o `accessToken` da resposta.
+2. No topo direito, em **Authentication → Bearer Token**, cole o token (só o token, sem escrever "Bearer").
+3. Agora todas as rotas de **Categories**, **IncomeSources** e **ExpenseSources** respondem autenticadas — dá para criar, listar, editar e excluir direto por ali.
+
+*Pelo arquivo `.http`:* abra `backend/src/MyFinance.API/MyFinance.API.http` (extensão *REST Client* no VS Code) e envie os blocos da seção **Fase 2**, de cima para baixo — o token do login é reaproveitado automaticamente.
+
+- **Esperado, nos dois casos:** criar → **201**; listar/obter → **200**; atualizar → **200**; excluir → **204**; categoria em uso → **409**; dados inválidos ou categoria inexistente → **400**; sem token → **401**; acessar pelo id um registro de **outro usuário** → **404**.
 
 > **Dicas que evitam falso negativo neste projeto** (aprendidas na marra):
 > - Antes de subir a API, **mate instâncias antigas** e libere a porta — senão você testa um build velho:

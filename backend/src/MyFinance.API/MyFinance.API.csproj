@@ -17,6 +17,7 @@
     <!-- Fixa a transitiva do Microsoft.AspNetCore.OpenApi (2.0.0 tem NU1903/GHSA-v5pm-xwqc-g5wc);
          mantém a linha v2, compatível com o source generator do framework. -->
     <PackageReference Include="Microsoft.OpenApi" Version="2.11.0" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.16.18" />
   </ItemGroup>
 
   <ItemGroup>
